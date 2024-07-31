@@ -1,0 +1,47 @@
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Terraform backup files
+*.tfstate.backup
+
+# Local .terraform directory
+.terraform/
+
+# Crash logs
+crash.log
+
+# Exclude the terraform variables file with sensitive data
+terraform.tfvars
+*.tfvars
+
+# Environment variables files
+.env
+
+# IDE and editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Helm related files
+*.tgz
+*.tar.gz
+
+# Logs
+*.log
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.p12
+
+# Terraform workspace files
+terraform.workspace
+
