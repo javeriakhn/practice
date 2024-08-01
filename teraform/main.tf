@@ -1,46 +1,65 @@
+
 provider "azurerm" {
   features {}
 }
 
-data "azurerm_client_config" "example" {}
-
-resource "azurerm_container_registry" "source_acr" {
-  name                = "sourceacr"
-  resource_group_name = "source-rg"
-  location            = "West Europe"
-  sku                 = "Basic"
-  admin_enabled       = true
-}
-
-resource "azurerm_container_registry" "instance_acr" {
-  name                = var.acr_server
-  resource_group_name = "instance-rg"
-  location            = "West Europe"
-  sku                 = "Basic"
-  admin_enabled       = true
-}
-
-resource "null_resource" "import_charts" {
-  count = length(var.charts)
-
-  provisioner "local-exec" {
-    command = <<EOT
-      az acr import --name ${azurerm_container_registry.instance_acr.name} \
-                    --source ${var.source_acr_server}/${element(var.charts, count.index).chart_repository}:${element(var.charts, count.index).chart_version} \
-                    --username ${var.source_acr_client_id} \
-                    --password ${var.source_acr_client_secret}
-    EOT
+provider "helm" {
+  kubernetes {
+    host                   = azurerm_kubernetes_cluster.aks.kube_config[0].host
+    client_certificate     = base64decode(azurerm_kubernetes_cluster.aks.kube_config[0].client_certificate)
+    client_key             = base64decode(azurerm_kubernetes_cluster.aks.kube_config[0].client_key)
+    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks.kube_config[0].cluster_ca_certificate)
   }
 }
 
-resource "helm_release" "chart_release" {
-  count = length(var.charts)
+resource "azurerm_resource_group" "aks" {
+  name     = var.resource_group_name
+  location = "East US"
+}
 
-  name       = element(var.charts, count.index).chart_name
-  namespace  = element(var.charts, count.index).chart_namespace
-  repository = "${azurerm_container_registry.instance_acr.login_server}/${element(var.charts, count.index).chart_repository}"
-  chart      = element(var.charts, count.index).chart_name
-  version    = element(var.charts, count.index).chart_version
-  values     = [for v in element(var.charts, count.index).values : "${v.name}=${v.value}"]
+resource "azurerm_kubernetes_cluster" "aks" {
+  name                = var.kubernetes_cluster_name
+  location            = azurerm_resource_group.aks.location
+  resource_group_name = azurerm_resource_group.aks.name
+  dns_prefix          = var.dns_prefix
+
+  default_node_pool {
+    name       = var.node_pool_name
+    node_count = var.node_count
+    vm_size    = var.vm_size
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  network_profile {
+    network_plugin = var.network_plugin
+  }
+
+  tags = jsondecode(var.tags)
+}
+
+resource "helm_release" "ping" {
+  depends_on = [azurerm_kubernetes_cluster.aks]
+  name       = var.chart_name
+  repository = "oci://${var.acr_server}/helm-charts"
+  chart      = var.chart_name
+  namespace  = var.chart_namespace
+  version    = var.chart_version
+
+  values = [
+    for value in var.values : {
+      name  = value.name
+      value = value.value
+    }
+  ]
+
+  set_sensitive = [
+    for sensitive_value in var.sensitive_values : {
+      name  = sensitive_value.name
+      value = sensitive_value.value
+    }
+  ]
 }
 
