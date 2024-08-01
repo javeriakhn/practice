@@ -27,11 +27,15 @@ jobs:
       - name: Login to ACR
         run: echo ${{ secrets.ACR_PASSWORD }} | helm registry login mycontainerregistury.azurecr.io --username ${{ secrets.ACR_USERNAME }} --password-stdin
 
+      - name: Navigate to Chart Directory
+        run: cd ping/templates # Replace with the actual path to your Helm chart
+
       - name: Push Helm chart
         run: helm push ping-0.1.0.tgz oci://mycontainerregistury.azurecr.io/helm-charts
 
       - name: Install Helm chart to AKS
-        run: helm install my-release oci://mycontainerregistury.azurecr.io/helm-charts/ping --version 0.1.0
+        run: helm install my-release oci://mycontainerregistury.azurecr.io/helm-charts/ping --version 0.1.0 --set serviceAccount.create=true --set serviceAccount.name=my-service-account
+
 
 
 
