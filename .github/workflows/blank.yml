@@ -1,3 +1,4 @@
+
 name: Helm Deploy
 
 on:
@@ -12,10 +13,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Azure CLI
-        uses: azure/azure-cli-action@v1
-        with:
-          azcliversion: '2.49.1' # Use a specific version of Azure CLI
+      - name: Install Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az --version # Verify the installation
 
       - name: Login to Azure
         run: |
