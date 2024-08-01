@@ -17,20 +17,9 @@ jobs:
           curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
           az --version # Verify the installation
 
-      - name: Parse Azure Credentials
-        id: parse-credentials
-        run: |
-          echo "${{ secrets.AZURE_CREDENTIALS }}" > azure_credentials.json
-          export AZURE_CLIENT_ID=$(jq -r '.appId' azure_credentials.json)
-          export AZURE_CLIENT_SECRET=$(jq -r '.password' azure_credentials.json)
-          export AZURE_TENANT_ID=$(jq -r '.tenant' azure_credentials.json)
-          echo "AZURE_CLIENT_ID=${AZURE_CLIENT_ID}" >> $GITHUB_ENV
-          echo "AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}" >> $GITHUB_ENV
-          echo "AZURE_TENANT_ID=${AZURE_TENANT_ID}" >> $GITHUB_ENV
-
       - name: Login to Azure
         run: |
-          az login --service-principal --username ${{ env.AZURE_CLIENT_ID }} --password ${{ env.AZURE_CLIENT_SECRET }} --tenant ${{ env.AZURE_TENANT_ID }}
+          az login --service-principal --username ${{ secrets.AZURE_CLIENT_ID }} --password ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group myresourcegroup --name myakscluster
