@@ -27,14 +27,63 @@ jobs:
       - name: Login to ACR
         run: echo ${{ secrets.ACR_PASSWORD }} | helm registry login mycontainerregistury.azurecr.io --username ${{ secrets.ACR_USERNAME }} --password-stdin
 
-      - name: Navigate to Chart Directory
-        run: cd ping/templates # Replace with the actual path to your Helm chart
+      - name: Package Helm chart
+        run: helm package name: Helm Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az --version # Verify the installation
+
+      - name: Login to Azure
+        run: |
+          az login --service-principal --username ${{ secrets.AZURE_CLIENT_ID }} --password ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group myresourcegroup --name myakscluster
+
+      - name: Login to ACR
+        run: echo ${{ secrets.ACR_PASSWORD }} | helm registry login mycontainerregistury.azurecr.io --username ${{ secrets.ACR_USERNAME }} --password-stdin
+
+      - name: Package Helm chart
+        run: helm package ping-0.1.0.tgz # Replace with the actual path to your Helm chart
 
       - name: Push Helm chart
         run: helm push ping-0.1.0.tgz oci://mycontainerregistury.azurecr.io/helm-charts
 
       - name: Install Helm chart to AKS
-        run: helm install my-release oci://mycontainerregistury.azurecr.io/helm-charts/ping --version 0.1.0 --set serviceAccount.create=true --set serviceAccount.name=my-service-account
+        run: |
+          helm install my-release oci://mycontainerregistury.azurecr.io/helm-charts/ping --version 0.1.0 \
+            --set serviceAccount.create=true \
+            --set serviceAccount.name=my-service-account \
+            --set ingress.enabled=false \
+            --set image.repository=my-repo/ping \
+            --set image.tag=latest
+# Replace with the actual path to your Helm chart
+
+      - name: Push Helm chart
+        run: helm push ping-0.1.0.tgz oci://mycontainerregistury.azurecr.io/helm-charts
+
+      - name: Install Helm chart to AKS
+        run: |
+          helm install my-release oci://mycontainerregistury.azurecr.io/helm-charts/ping --version 0.1.0 \
+            --set serviceAccount.create=true \
+            --set serviceAccount.name=my-service-account \
+            --set ingress.enabled=false \
+            --set image.repository=my-repo/ping \
+            --set image.tag=latest
 
 
 
