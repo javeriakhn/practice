@@ -20,7 +20,7 @@ jobs:
       - name: Login to Azure
         run: |
           az login --service-principal --username ${{ secrets.AZURE_CLIENT_ID }} --password ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
-
+          
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group myresourcegroup --name myakscluster
 
@@ -28,7 +28,7 @@ jobs:
         run: echo ${{ secrets.ACR_PASSWORD }} | helm registry login mycontainerregistury.azurecr.io --username ${{ secrets.ACR_USERNAME }} --password-stdin
 
       - name: Package Helm chart
-        run: helm package ping# Replace with the actual path to your Helm chart
+        run: helm package ping # Replace with the actual path to your Helm chart
 
       - name: Push Helm chart
         run: helm push ping-0.1.0.tgz oci://mycontainerregistury.azurecr.io/helm-charts
