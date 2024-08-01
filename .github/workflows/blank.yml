@@ -1,3 +1,4 @@
+
 name: Deploy Helm Chart
 
 on:
@@ -23,12 +24,28 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Set up Helm
+      uses: azure/setup-helm@v1
+      with:
+        helm_version: '3.8.0'  # Set your desired Helm version
+
+    - name: Login to ACR
+      run: helm registry login mycontainerregistury.azurecr.io --username ${{ secrets.ACR_USERNAME }} --password ${{ secrets.ACR_PASSWORD }}
+
     - name: Initialize Terraform
       run: terraform init
-      working-directory: ./teraform
-      
+      working-directory: ./terraform
 
     - name: Apply Terraform
       run: terraform apply -auto-approve
-      working-directory: ./teraform
-
+      working-directory: ./terraform
+      env:
+        TF_VAR_acr_server: ${{ secrets.ACR_SERVER }}
+        TF_VAR_acr_server_subscription: ${{ secrets.ACR_SERVER_SUBSCRIPTION }}
+        TF_VAR_source_acr_client_id: ${{ secrets.SOURCE_ACR_CLIENT_ID }}
+        TF_VAR_source_acr_client_secret: ${{ secrets.SOURCE_ACR_CLIENT_SECRET }}
+        TF_VAR_source_acr_server: ${{ secrets.SOURCE_ACR_SERVER }}
+        TF_VAR_charts: ${{ secrets.CHARTS }}
+        TF_VAR_resource_group_name: ${{ secrets.RESOURCE_GROUP_NAME }}
+        TF_VAR_kubernetes_cluster_name: ${{ secrets.KUBERNETES_CLUSTER_NAME }}
+        
