@@ -1,4 +1,3 @@
-
 provider "azurerm" {
   features {}
 }
@@ -14,7 +13,7 @@ provider "helm" {
 
 resource "azurerm_resource_group" "aks" {
   name     = var.resource_group_name
-  location = "East US"
+  location = var.location
 }
 
 resource "azurerm_kubernetes_cluster" "aks" {
@@ -40,10 +39,18 @@ resource "azurerm_kubernetes_cluster" "aks" {
   tags = jsondecode(var.tags)
 }
 
+resource "azurerm_container_registry" "acr" {
+  name                = var.acr_name
+  resource_group_name = azurerm_resource_group.aks.name
+  location            = azurerm_resource_group.aks.location
+  sku                 = "Basic"
+  admin_enabled       = true
+}
+
 resource "helm_release" "ping" {
   depends_on = [azurerm_kubernetes_cluster.aks]
   name       = var.chart_name
-  repository = "oci://${var.acr_server}/helm-charts"
+  repository = "oci://${azurerm_container_registry.acr.login_server}/helm-charts"
   chart      = var.chart_name
   namespace  = var.chart_namespace
   version    = var.chart_version
@@ -62,4 +69,5 @@ resource "helm_release" "ping" {
     }
   ]
 }
+
 
