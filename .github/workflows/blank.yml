@@ -28,7 +28,7 @@ jobs:
         run: echo ${{ secrets.ACR_PASSWORD }} | helm registry login mycontainerregistury.azurecr.io --username ${{ secrets.ACR_USERNAME }} --password-stdin
 
       - name: Package Helm chart
-        run: helm package ping-0.1.0.tgz# Replace with the actual path to your Helm chart
+        run: helm package ping# Replace with the actual path to your Helm chart
 
       - name: Push Helm chart
         run: helm push ping-0.1.0.tgz oci://mycontainerregistury.azurecr.io/helm-charts
